@@ -19,5 +19,7 @@ private:
     static Result<void> emit_meson(const Registry& reg, const std::string& path);
     static Result<void> emit_rust(const Registry& reg, const std::string& path);
     static Result<void> emit_typescript(const Registry& reg, const std::string& path);
+    static Result<void> emit_dotenv(const Registry& reg, const std::string& path);
+    static Result<void> emit_toml(const Registry& reg, const std::string& path);
 };
 }

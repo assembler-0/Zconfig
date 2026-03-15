@@ -641,7 +641,9 @@ private:
         else if (current.text == "meson") backend = GeneratorBackend::Meson;
         else if (current.text == "rust") backend = GeneratorBackend::Rust;
         else if (current.text == "typescript") backend = GeneratorBackend::TypeScript;
-        else return err("Expected generator backend (header|makefile|json|cmake|meson|rust|typescript)");
+        else if (current.text == "dotenv") backend = GeneratorBackend::Dotenv;
+        else if (current.text == "toml") backend = GeneratorBackend::TOML;
+        else return err("Expected generator backend (header|makefile|json|cmake|meson|rust|typescript|dotenv|toml)");
 
         for (const auto& existing : reg.get_generators()) {
             if (existing->backend == backend) {

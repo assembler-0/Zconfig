@@ -179,6 +179,8 @@ generate cmake    "config.cmake" # CMake fragment
 generate meson    "config.meson" # Meson fragment
 generate rust     "config.rs"   # Rust constants
 generate typescript "config.ts" # TypeScript constants
+generate dotenv   "config.env"  # Dotenv format
+generate toml     "config.toml" # TOML format
 ```
 
 ### Advanced Expressions

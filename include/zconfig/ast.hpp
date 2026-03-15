@@ -122,7 +122,7 @@ namespace zconfig {
         std::string body;
     };
 
-    enum class GeneratorBackend { Header, Makefile, JSON, CMake, Meson, Rust, TypeScript };
+    enum class GeneratorBackend { Header, Makefile, JSON, CMake, Meson, Rust, TypeScript, Dotenv, TOML };
 
     class GenerateNode : public Node {
     public:
