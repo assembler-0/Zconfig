@@ -28,6 +28,21 @@ int main(int argc, char** argv) {
         else if (arg == "--debug")    zconfig::log::debug_enabled = true;
         else if (arg == "--defconfig") defconfig = true;
         else if (arg == "--validate") validate = true;
+        else if (arg == "--version") {
+            ZLOG_INFO("zconfig 26H1\n");
+            return 0;
+        }
+        else if (arg == "--help") { 
+            ZLOG_INFO("Usage: zconfig [options]\n");
+            ZLOG_INFO("Options:\n");
+            ZLOG_INFO("  --parse-only  Parse the configuration file without running the TUI.\n");
+            ZLOG_INFO("  --debug       Enable debug logging.\n");
+            ZLOG_INFO("  --defconfig   Generate a default configuration file.\n");
+            ZLOG_INFO("  --validate    Validate the configuration file.\n");
+            ZLOG_INFO("  --version     Show the version of zconfig.\n");
+            ZLOG_INFO("  --help        Show this help message.\n");
+            return 0;
+        }
     }
 
     if (!std::filesystem::exists(ZCONFIG_FILE)) {

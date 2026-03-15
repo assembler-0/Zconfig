@@ -485,7 +485,7 @@ Element Engine::render_help(Node* node) {
 
 Element Engine::render_tab_bar() {
     return hbox({
-        text(" zconfig v0.0.1 ") | bold,
+        text(" zconfig 26H1 ") | bold,
         separator(),
         filler(),
         text("[?] help  [s] save  [d] default  [q] quit  [v] validate  [/] search") | dim,
