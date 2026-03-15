@@ -9,6 +9,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <optional>
 
 namespace zconfig {
     class Symbol; 
@@ -127,6 +128,6 @@ namespace zconfig {
     public:
         GeneratorBackend backend;
         std::string output_path;
-        void reevaluate() override {} // Generators are static
+        void reevaluate() override {}
     };
 }

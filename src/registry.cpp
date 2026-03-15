@@ -90,8 +90,6 @@ void Registry::link() {
         collect_all(val, val->condition.get());
     }
 
-    // After linking, do one final pass of reevaluation for ALL nodes
-    // to build initial state and set up values.
     for (auto& node : all_nodes) {
         node->reevaluate();
     }
@@ -99,8 +97,6 @@ void Registry::link() {
         val->reevaluate();
     }
     
-    // Do one final sweep for validations and symbols in case their dependencies 
-    // initialized out-of-order and pushed updates that didn't settle.
     for (auto& node : all_nodes) node->reevaluate();
     for (auto* val : validations) val->reevaluate();
 }
@@ -108,7 +104,6 @@ void Registry::link() {
 ValidationResult Registry::validate_all() const {
     ValidationResult res;
     
-    // 1. Check explicit Validation nodes
     for (auto* val : validations) {
         if (!val->satisfied) {
             res.valid = false;
@@ -116,7 +111,6 @@ ValidationResult Registry::validate_all() const {
         }
     }
 
-    // 2. Check all configurable symbols for range/pattern bounds constraints
     for (const auto& [name, sym] : symbols) {
         if (!sym->is_effectively_visible()) continue;
         const Value& cur = (std::holds_alternative<std::monostate>(sym->user_value)) ? sym->computed_value : sym->user_value;
@@ -241,4 +235,4 @@ Result<void> Registry::save_cache(const std::string& path) {
     return {};
 }
 
-}
+} // namespace zconfig

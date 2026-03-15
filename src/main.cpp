@@ -28,7 +28,6 @@ int main(int argc, char** argv) {
         else if (arg == "--debug")    zconfig::log::debug_enabled = true;
         else if (arg == "--defconfig") defconfig = true;
         else if (arg == "--validate") validate = true;
-        // No positional config-path argument — always use Zconfig in CWD.
     }
 
     if (!std::filesystem::exists(ZCONFIG_FILE)) {
@@ -93,9 +92,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    // Load saved values; load_cache() calls link() internally
     if (auto res = reg.load_cache(ZCONFIG_CACHE); !res) {
-        // If cache missing or failed, just initialize defaults
         reg.link();
     }
 

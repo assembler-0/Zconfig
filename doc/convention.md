@@ -15,7 +15,7 @@ This document defines the standards for extending and maintaining the Zconfig pr
 *   `doc/`: Specifications and conventions.
 
 ### 1.3 Error Handling
-*   Never use exceptions. Use `std::expected` via the `Result<T>` alias defined in `error.hpp`.
+*   Never use exceptions. Use `std::expected` via the `Result<T>` alias defined in `include/zconfig/error.hpp`.
 *   Use the `TRY(x)` macro for propagating errors in the parser.
 *   Always provide a `Diagnostic` with file, line, and column for user-facing errors.
 

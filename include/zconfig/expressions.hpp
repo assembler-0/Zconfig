@@ -48,7 +48,7 @@ struct ShellExpr : public Expression {
 struct InterpolatedStringExpr : public Expression {
     struct Part {
         std::string text;
-        std::unique_ptr<Expression> expr; // non-null → dynamic symbol reference
+        std::unique_ptr<Expression> expr;
     };
     std::vector<Part> parts;
     Value evaluate() const override;
@@ -114,7 +114,6 @@ struct UnaryExpr : public Expression {
     }
 };
 
-// Ternary conditional:  condition ? then_expr : else_expr
 struct TernaryExpr : public Expression {
     std::unique_ptr<Expression> cond;
     std::unique_ptr<Expression> then_expr;

@@ -12,6 +12,7 @@
 #include <ftxui/component/event.hpp>
 #include <ftxui/screen/box.hpp>
 #include <zconfig/fs.hpp>
+#include <zconfig/search.hpp>
 #include <map>
 #include <set>
 #include <string>

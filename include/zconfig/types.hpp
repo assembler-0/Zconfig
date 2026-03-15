@@ -8,18 +8,20 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include <optional>
+#include <zconfig/error.hpp>
 
 namespace zconfig {
-    enum class Type { Bool, Int, String, Enum, Set, Void };
 
-    using Value = std::variant<
-        std::monostate, // Void/Unset
-        bool,
-        int64_t,
-        std::string,
-        std::vector<std::string> // Set
-    >;
+enum class Type { Bool, Int, String, Enum, Set, Void };
 
-    struct Range { int64_t min; int64_t max; };
+using Value = std::variant<
+    std::monostate, // Void/Unset
+    bool,
+    int64_t,
+    std::string,
+    std::vector<std::string> // Set
+>;
+
+struct Range { int64_t min; int64_t max; };
+
 }

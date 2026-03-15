@@ -60,9 +60,6 @@ public:
             std::string text;
             while (pos < source.size()) {
                 char ch = source[pos];
-                // Allow hyphen inside identifiers only when immediately followed
-                // by alphanumeric — e.g. mq-deadline, bitlocker-compat.
-                // A hyphen followed by space/EOF is the SUB operator.
                 if (isalnum(ch) || ch == '_' || ch == '.') {
                     text += ch; pos++; col++;
                 } else if (ch == '-' && pos + 1 < source.size() && isalnum(source[pos + 1])) {
@@ -77,8 +74,8 @@ public:
         if (isdigit(c)) {
             std::string text;
             if (c == '0' && pos + 1 < source.size() && (source[pos+1] == 'x' || source[pos+1] == 'X')) {
-                text += source[pos++]; col++; // 0
-                text += source[pos++]; col++; // x
+                text += source[pos++]; col++;
+                text += source[pos++]; col++;
                 while (pos < source.size() && isxdigit(source[pos])) {
                     text += source[pos++]; col++;
                 }
@@ -301,8 +298,6 @@ private:
         advance(); // consume '?'
         auto then_expr = parse_ternary();
         if (!then_expr) return then_expr;
-        // expect ':' — but Colon is already used for type declarations;
-        // in expression context after '?' it must be the ternary separator.
         TRY(expect(TokenType::Colon, "Expected ':' in ternary expression"));
         auto else_expr = parse_ternary();
         if (!else_expr) return else_expr;
@@ -717,7 +712,6 @@ private:
                             || current.type == TokenType::String) {
                          sym->meta.choices.push_back(current.text);
                          advance();
-                         // lexer emits BitOr for '|'; Pipe is never emitted
                          if (current.type == TokenType::Pipe || current.type == TokenType::BitOr) advance();
                      }
                 } else if (current.type == TokenType::Choice) {

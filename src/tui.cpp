@@ -126,7 +126,6 @@ void Engine::rebuild_rows() {
 
     for (auto* m : reg.get_menus()) walk(m, 0);
 
-    // Top-level symbols not attached to any menu (from included flat files).
     std::map<std::string, std::vector<Symbol*>> orphans;
     for (const auto& [name, sym] : reg.get_symbols()) {
         if (emitted.count(sym.get()) == 0) {
@@ -599,8 +598,6 @@ Element Engine::render_modal() {
     Element footer;
     std::string title = modal.title;
 
-    // Subdued hint text: GrayLight on black bg — readable without the SGR dim
-    // attribute which would bleed through the clear_under reset.
     auto hint = [](std::string s) -> Element {
         return text(s) | color(Color::GrayLight);
     };
@@ -801,14 +798,6 @@ Element Engine::render_modal() {
         footer = hbox({ hint(" [uparrow/downarrow] select  [enter] jump to source "), filler(), hint(" [esc] cancel ") });
     }
 
-    // The popup is built as:
-    //   borderRounded → wraps all content including border chars with black bgcolor
-    //   clear_under   → resets every pixel under the popup to default style FIRST
-    //                   (this clears any dim=true pixels from the body dbox layer)
-    //   center        → places the cleared+styled popup in the middle of the screen
-    //
-    // Body uses body | dim for the background — the clear_under ensures none of that
-    // dim bleeds into the popup area.
     auto popup_content = vbox({
         hbox({ text(" " + title + " ") | bold, filler() }) | inverted,
         separator(),
@@ -909,8 +898,6 @@ Component Engine::make_root() {
             auto body = vbox({ tab, banner, panels, status });
 
             if (modal.kind != ModalKind::None) {
-                // body | dim provides visual contrast; clear_under inside
-                // render_modal() clears the popup area back to undimmed defaults.
                 return dbox({ body | dim, render_modal() });
             }
             return body;
@@ -1063,7 +1050,7 @@ Component Engine::make_root() {
                         modal.int_val = 0;
                     }
                     if (ev == Event::Return) {
-                        return true; // Handled in global Return block
+                        return true;
                     }
                     return true;
                 }
@@ -1174,7 +1161,6 @@ Component Engine::make_root() {
                 }
                 return true;
             }
-            // 'd' = reset focused option to computed default.
             if (ev == Event::Character('d') && state.focus_right) {
                 if (auto* sym = focused_sym()) {
                     sym->user_value = std::monostate{};
@@ -1183,7 +1169,6 @@ Component Engine::make_root() {
                 }
                 return true;
             }
-            // No Tab — panels switched via ← / → arrow keys (see below).
 
             // ── panel navigation ──────────────────────────────────────────
             if (!state.focus_right) {
@@ -1193,24 +1178,20 @@ Component Engine::make_root() {
                     bool has_children = !flat_inc.empty() && !flat_inc[state.inc_sel].node->children.empty();
                     bool is_expanded  = !flat_inc.empty() && flat_inc[state.inc_sel].expanded;
                     if (has_children && !is_expanded) {
-                        // Node has children but is collapsed → expand it.
                         toggle_inc_expand();
                     } else {
-                        // Already expanded, no children, or Return — enter right panel.
                         rebuild_rows();
                         state.focus_right = true;
                     }
                     return true;
                 }
                 if (ev == Event::ArrowLeft || ev == Event::Character('h')) {
-                    // Collapse if expanded, otherwise no-op.
                     if (!flat_inc.empty() && flat_inc[state.inc_sel].expanded)
                         toggle_inc_expand();
                     return true;
                 }
                 if (ev == Event::Character(' ')) { toggle_inc_expand(); return true; }
             } else {
-                // Right panel: ↑↓/jk navigate; ← / h returns to left panel.
                 if (ev == Event::ArrowUp   || ev == Event::Character('k')) { nav_row_up();   return true; }
                 if (ev == Event::ArrowDown || ev == Event::Character('j')) { nav_row_down(); return true; }
                 if (ev == Event::ArrowLeft || ev == Event::Character('h')) {
