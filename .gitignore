@@ -1,3 +1,7 @@
 .cache
 .vscode
 *build*
+.p/
+Zconfig*
+*.z 
+config.*

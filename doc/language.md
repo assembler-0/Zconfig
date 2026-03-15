@@ -19,7 +19,7 @@ option NR_CPUS : int = 4 {
 # String with validation pattern
 option KERNEL_VERSION : string = "6.1.0" {
     label   "Kernel version string"
-    pattern /^\d+\.\d+\.\d+/
+    pattern "^\d+\.\d+\.\d+"
 }
 
 # Enum type
@@ -120,14 +120,65 @@ include "drivers/net/Kconfig" as net  # namespaced: net.VIRTIO_NET etc.
 include "drivers/net/Kconfig" when NET # conditional include
 ```
 
-### TUI metadata
-First-class hints for the FTXUI renderer — search tags, grouping color, danger level, and whether to collapse by default.
+### Host awareness (Probing)
+Zconfig can probe the host environment during the parsing phase. This is useful for defaults that match the current system.
 ```c
-option KASAN : bool = false {
-    label    "Kernel address sanitizer"
-    help     "Detect use-after-free and out-of-bounds. ~2× memory overhead."
-    tags     ["debug", "memory", "sanitizer"]
-    danger   warning        # none | warning | critical
-    collapsed               # collapsed in TUI by default
+option HOSTNAME : string = shell("hostname") {
+    label "Host system name"
 }
+
+option BUILD_USER : string = env("USER") {
+    label "User performing the build"
+}
+```
+
+### String interpolation
+Symbols of type `string` can use `${SYMBOL}` syntax to dynamically construct values from other options.
+```c
+option PREFIX : string = "/usr/local"
+
+computed BIN_DIR : string = "${PREFIX}/bin"
+computed LIB_DIR : string = "${PREFIX}/lib/${ARCH}"
+```
+
+### Cross-symbol validation
+While `range` and `pattern` protect single symbols, `validate` blocks enforce system-wide invariants. If a validation fails, the configuration is considered "invalid" and cannot be saved/applied.
+```c
+option RAM_SIZE : int = 1024
+option THREADS  : int = 8
+
+validate "Insufficient memory per thread" {
+    RAM_SIZE >= THREADS * 128
+}
+
+validate "RAM must be power of two" {
+    (RAM_SIZE & (RAM_SIZE - 1)) == 0
+}
+```
+
+### Meta-Programming (Macros)
+Macros allow for boilerplate reduction by defining reusable configuration templates. Identifier splicing is supported via `${}` syntax.
+```c
+macro DRIVER(id, label_name) {
+    option DRV_${id} : bool = false {
+        label "${label_name} Support"
+    }
+}
+
+DRIVER(VIRTIO, "VirtIO Virtual Block")
+DRIVER(NVME,   "Non-Volatile Memory Express")
+```
+
+### Output Orchestration (Generators)
+Generators define how the final configuration state is exported to external build tools.
+```c
+generate header   "config.h"    # C/C++ Header
+generate makefile "config.mk"   # GNU Make fragment
+generate json     "config.json" # Machine-readable state
+```
+
+### Advanced Expressions
+Support for bitwise operators (`&`, `|`, `^`, `<<`, `>>`), math (`+`, `-`, `*`, `/`, `%`), and functions (`env`, `shell`, `is_defined`, `abs`).
+```c
+computed MASK : int = (1 << 8) - 1
 ```

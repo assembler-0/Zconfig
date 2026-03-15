@@ -1,146 +1,132 @@
-// ── zconfig/ast.hpp ───────────────────────────────────────────────────────
+// ── include/zconfig/ast.hpp ───────────────────────────────────────────────
 // SPDX-License-Identifier: Apache-2.0
 // ──────────────────────────────────────────────────────────────────────────
 
 #pragma once
 
+#include <zconfig/types.hpp>
 #include <memory>
-#include <optional>
-#include <string>
-#include <variant>
 #include <vector>
+#include <set>
+#include <map>
 
 namespace zconfig {
+    class Symbol; 
 
-// ── Source location (attach to every node for TUI error reporting) ─────────
+    struct Expression {
+        virtual ~Expression() = default;
+        virtual Value evaluate() const = 0;
+        virtual void collect_dependencies(std::set<Symbol*>& deps) = 0;
+    };
 
-struct Loc {
-    std::string_view file;
-    uint32_t line, col;
-};
+    struct DefaultCase {
+        std::unique_ptr<Expression> value_expr;
+        std::unique_ptr<Expression> condition; // nullptr for fallback
+    };
 
-// ── Expression tree ────────────────────────────────────────────────────────
-// Represents: when, implies, computed, conditional defaults
+    struct Implication {
+        std::unique_ptr<Expression> condition; 
+        std::unique_ptr<Expression> target_expr; 
+    };
 
-struct Expr;
+    struct ChoiceInfo {
+        std::string label;
+        std::string help;
+        std::unique_ptr<Expression> when_condition;
+    };
 
-struct ExprIdent  { std::string name; };
-struct ExprLit    { bool value; };            // true / false literal
-struct ExprIntLit { int64_t value; };
-struct ExprStrLit { std::string value; };
-struct ExprEq     { std::unique_ptr<Expr> lhs, rhs; };
-struct ExprNeq    { std::unique_ptr<Expr> lhs, rhs; };
-struct ExprAnd    { std::unique_ptr<Expr> lhs, rhs; };
-struct ExprOr     { std::unique_ptr<Expr> lhs, rhs; };
-struct ExprNot    { std::unique_ptr<Expr> operand; };
+    enum class DangerLevel { None, Warning, Critical };
 
-struct Expr {
-    using Inner = std::variant<
-        ExprIdent, ExprLit, ExprIntLit, ExprStrLit,
-        ExprEq, ExprNeq, ExprAnd, ExprOr, ExprNot
-    >;
-    Inner inner;
-    Loc loc;
-};
+    struct Metadata {
+        std::string label;
+        std::string help;
+        std::vector<std::string> tags;
+        DangerLevel danger{DangerLevel::None};
+        bool collapsed{false};
+        std::optional<Range> range;
+        std::string pattern; 
+        
+        std::map<std::string, ChoiceInfo> choices_meta;
+        std::vector<std::string> choices; 
+    };
 
-// ── Value variants ─────────────────────────────────────────────────────────
-// Runtime values — also used for AST literals
+    class Node {
+    public:
+        virtual ~Node() = default;
+        virtual void reevaluate() = 0;
+        
+        bool is_visible() const { return visible; }
+        
+        bool is_effectively_visible() const {
+            if (!visible) return false;
+            if (parent) return parent->is_effectively_visible();
+            return true;
+        }
 
-using Value = std::variant<
-    bool,
-    int64_t,
-    std::string,
-    std::vector<std::string>   // set<> — multi-select active choices
->;
+        void add_dependent(Node* dep) { 
+            for (auto* d : dependents) if (d == dep) return;
+            dependents.push_back(dep); 
+        }
 
-// ── Conditional default entry ──────────────────────────────────────────────
-// One arm of:  default { 1000 when PREEMPT_MODEL == realtime; 100 }
+        std::unique_ptr<Expression> when_condition;
+        std::vector<Node*> dependents;
+        Node*       parent{nullptr};
+        bool        visible{true};
+        std::string source_file;
+    };
 
-struct DefaultEntry {
-    Value                value;
-    std::optional<Expr>  when;   // nullopt = unconditional fallback
-};
+    class ValidationNode : public Node {
+    public:
+        std::string message;
+        std::unique_ptr<Expression> condition;
+        bool satisfied{true};
+        
+        void reevaluate() override; 
+    };
 
-// ── Per-choice metadata (for enum/set options) ─────────────────────────────
+    class Symbol : public Node {
+    public:
+        std::string name;
+        Type type;
+        Value user_value;
+        Value computed_value;
+        Metadata meta;
+        std::vector<DefaultCase> defaults;
+        std::vector<Implication> implications; 
 
-struct ChoiceEntry {
-    std::string          name;
-    std::string          label;
-    std::string          help;
-    std::optional<Expr>  when;   // hidden unless condition is met
-    Loc                  loc;
-};
+        void reevaluate() override; 
+        bool validate(const Value& val) const;
+    };
 
-// ── TUI / display metadata (attached to every OptionNode) ─────────────────
+    class Menu : public Node {
+    public:
+        std::string label;
+        std::vector<Node*> children;
+        void reevaluate() override; 
+    };
 
-enum class DangerLevel { None, Warning, Critical };
+    class ComputedSymbol : public Node {
+    public:
+        std::string name;
+        Type type;
+        Value value;
+        std::unique_ptr<Expression> expr;
 
-struct RangeConstraint {
-    int64_t lo, hi;              // inclusive on both ends
-};
+        void reevaluate() override; 
+    };
 
-struct OptionMeta {
-    std::string                      label;
-    std::string                      help;
-    std::vector<std::string>         tags;
-    DangerLevel                      danger    = DangerLevel::None;
-    bool                             collapsed = false;
-    std::optional<RangeConstraint>   range;     // int only
-    std::optional<std::string>       pattern;   // string only — regex source
-    std::vector<ChoiceEntry>         choices;   // enum/set only
-};
+    struct MacroDefinition {
+        std::string name;
+        std::vector<std::string> arg_names;
+        std::string body;
+    };
 
-// ── Option type tag ────────────────────────────────────────────────────────
+    enum class GeneratorBackend { Header, Makefile, JSON };
 
-enum class OptionType { Bool, Int, String, Enum, Set };
-
-// ── Core option node ───────────────────────────────────────────────────────
-
-struct OptionNode {
-    std::string                  name;
-    OptionType                   type;
-    std::vector<DefaultEntry>    defaults;    // evaluated top-to-bottom
-    std::optional<Expr>          when;        // visibility / enable condition
-    std::vector<Expr>            implies;     // soft select — one per target
-    bool                         computed = false;   // read-only derived value
-    OptionMeta                   meta;
-    Loc                          loc;
-};
-
-// ── Forward-declare Node so MenuNode can hold Vec<Node> ───────────────────
-
-struct Node;
-
-// ── Menu node ─────────────────────────────────────────────────────────────
-
-struct MenuNode {
-    std::string              label;
-    std::optional<Expr>      when;
-    std::vector<Node>        children;
-    Loc                      loc;
-};
-
-// ── Include node ──────────────────────────────────────────────────────────
-
-struct IncludeNode {
-    std::string              path;
-    std::optional<std::string> ns;   // "as net" -> ns = "net"
-    std::optional<Expr>      when;
-    Loc                      loc;
-};
-
-// ── Top-level node variant ────────────────────────────────────────────────
-
-struct Node {
-    using Inner = std::variant<OptionNode, MenuNode, IncludeNode>;
-    Inner inner;
-};
-
-// ── Root of one parsed file ────────────────────────────────────────────────
-
-struct ZconfigFile {
-    std::string        path;
-    std::vector<Node>  children;
-};
-
-} // namespace zconfig
+    class GenerateNode : public Node {
+    public:
+        GeneratorBackend backend;
+        std::string output_path;
+        void reevaluate() override {} // Generators are static
+    };
+}
