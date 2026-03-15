@@ -916,23 +916,48 @@ Component Engine::make_root() {
                         auto v = reg.validate_all();
                         if (modal.enum_idx >= 0 && modal.enum_idx < (int)v.errors.size()) {
                             Node* src = v.errors[modal.enum_idx].source;
-                            if (src && !src->source_file.empty()) {
-                                state.expanded_inc.insert(src->source_file);
-                                rebuild_inc_flat();
-                                for (int i = 0; i < (int)flat_inc.size(); ++i) {
-                                    if (flat_inc[i].node->path == src->source_file) {
-                                        state.inc_sel = i;
-                                        break;
+                            if (src) {
+                                if (auto* vnode = dynamic_cast<ValidationNode*>(src)) {
+                                    if (vnode->condition) {
+                                        std::set<Symbol*> deps;
+                                        vnode->condition->collect_dependencies(deps);
+                                        if (!deps.empty()) {
+                                            src = *deps.begin();
+                                        }
                                     }
                                 }
-                                rebuild_rows();
-                                for (int i = 0; i < (int)flat_rows.size(); ++i) {
-                                    if (flat_rows[i].node == src) {
-                                        state.node_sel = i;
-                                        state.focus_right = true;
-                                        ensure_row_visible(right_box.y_max - right_box.y_min);
-                                        break;
+
+                                if (!src->source_file.empty()) {
+                                    state.expanded_inc.insert(src->source_file);
+                                    rebuild_inc_flat();
+                                    for (int i = 0; i < (int)flat_inc.size(); ++i) {
+                                        if (flat_inc[i].node->path == src->source_file) {
+                                            state.inc_sel = i;
+                                            break;
+                                        }
                                     }
+                                    rebuild_rows();
+
+                                    bool found_exact = false;
+                                    for (int i = 0; i < (int)flat_rows.size(); ++i) {
+                                        if (flat_rows[i].node == src) {
+                                            state.node_sel = i;
+                                            found_exact = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (!found_exact) {
+                                        for (int i = 0; i < (int)flat_rows.size(); ++i) {
+                                            if (flat_rows[i].is_header && flat_rows[i].header_source == src->source_file) {
+                                                state.node_sel = i;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    state.focus_right = true;
+                                    ensure_row_visible(right_box.y_max - right_box.y_min);
                                 }
                             }
                         }
