@@ -637,7 +637,11 @@ private:
         if (current.text == "header") backend = GeneratorBackend::Header;
         else if (current.text == "makefile") backend = GeneratorBackend::Makefile;
         else if (current.text == "json") backend = GeneratorBackend::JSON;
-        else return err("Expected generator backend (header|makefile|json)");
+        else if (current.text == "cmake") backend = GeneratorBackend::CMake;
+        else if (current.text == "meson") backend = GeneratorBackend::Meson;
+        else if (current.text == "rust") backend = GeneratorBackend::Rust;
+        else if (current.text == "typescript") backend = GeneratorBackend::TypeScript;
+        else return err("Expected generator backend (header|makefile|json|cmake|meson|rust|typescript)");
 
         for (const auto& existing : reg.get_generators()) {
             if (existing->backend == backend) {

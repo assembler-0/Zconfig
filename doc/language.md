@@ -175,6 +175,10 @@ Generators define how the final configuration state is exported to external buil
 generate header   "config.h"    # C/C++ Header
 generate makefile "config.mk"   # GNU Make fragment
 generate json     "config.json" # Machine-readable state
+generate cmake    "config.cmake" # CMake fragment
+generate meson    "config.meson" # Meson fragment
+generate rust     "config.rs"   # Rust constants
+generate typescript "config.ts" # TypeScript constants
 ```
 
 ### Advanced Expressions

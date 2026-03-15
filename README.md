@@ -11,8 +11,6 @@ Zconfig is a modern, powerful, English-based configuration language designed as 
 - **Libraries:**
   - [FTXUI](https://github.com/ArthurSonzogni/FTXUI) (TUI rendering UI)
 
-*Note: The CMake configuration links against `fmt`, `ftxui-component`, `ftxui-dom`, and `ftxui-screen`.*
-
 ## Compilation
 
 Build the project out-of-tree using CMake and Ninja:
