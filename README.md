@@ -48,27 +48,7 @@ Run the compiled executable. If no path is provided, it will typically default t
 
 ## Language Specification
 
-Zconfig provides an English-based DSL tailored for kernel and embedded configuration. It replaces cryptic Kconfig legacy semantics with clear, readable directives.
-
-**Example Syntax:**
-```
-symbol dbg_PERF_EVENTS: bool
-    prompt "Enable kernel performance tracking"
-    default true
-
-    help
-      Enables deep kernel instruction cycle auditing.
-```
-
-- `symbol <name>: <type>`: Define a configuration node (Types: `bool`, `int`, `string`, `enum`, `set`).
-- `prompt <string>`: User-facing TUI label.
-- `help`: Multi-line description and system warnings.
-- `default <expr>`: Fallback value computation.
-- `when <expr>`: Dependent visibility controls.
-- `implies <symbol>`: Dependency assertion and resolution.
-- `validate <expr> <msg>`: Global sanity checks.
-
-For the definitive structural blueprint, refer to the language proposition in `doc/language.md`.
+refer to the language proposition in `doc/language.md`.
 
 ## License
 
